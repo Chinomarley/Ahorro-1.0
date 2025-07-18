@@ -17,21 +17,40 @@ function calcularSimulado() {
   const porcentaje = parseFloat(barraPorcentaje.value);
   const meses = parseInt(mesesSelect.value);
 
-  const aportacionTrabajador = sueldo * (porcentaje / 100) * (meses / 1);
-  const aportacionCFE = Math.min(porcentaje, 9.1) / 100 * sueldo * meses;
-  const total = aportacionTrabajador + aportacionCFE;
+  const aporteEmpleado = sueldo * (porcentaje / 100) * meses;
+  const aporteCFE = Math.min(porcentaje, 9.1) / 100 * sueldo * meses;
+  const total = aporteEmpleado + aporteCFE;
 
-  aportacionSpan.textContent = `$${aportacionCFE.toFixed(2)}`;
+  aportacionSpan.textContent = `$${aporteCFE.toFixed(2)}`;
   totalFondoSpan.textContent = `$${total.toFixed(2)}`;
 }
 
-barraPorcentaje.addEventListener("input", calcularSimulado);
-mesesSelect.addEventListener("change", calcularSimulado);
+function guardarHistorial() {
+  const historial = JSON.parse(localStorage.getItem("historialFondo") || "[]");
+
+  // Evitar duplicados por periodo
+  const duplicado = historial.find(e => e.periodo === datosActuales.periodo);
+  if (duplicado) {
+    alert("⚠ Esta papeleta ya fue registrada. Consulta el historial para verla.");
+    return;
+  }
+
+  const entrada = {
+    fecha: new Date().toLocaleDateString(),
+    sueldo: datosActuales.sueldo,
+    fondo: datosActuales.fondo,
+    periodo: datosActuales.periodo,
+    porcentaje: datosActuales.porcentaje
+  };
+
+  historial.push(entrada);
+  localStorage.setItem("historialFondo", JSON.stringify(historial));
+}
 
 procesarBtn.addEventListener("click", async () => {
   const archivo = uploadInput.files[0];
   if (!archivo) {
-    alert("Por favor selecciona una imagen de tu papeleta.");
+    alert("⚠ Por favor sube una imagen de la papeleta.");
     return;
   }
 
@@ -51,8 +70,8 @@ procesarBtn.addEventListener("click", async () => {
     const fondo = matchFondo ? parseFloat(matchFondo[1].replace(',', '')) : 0;
     const periodo = matchPeriodo ? `${matchPeriodo[1]} - ${matchPeriodo[2]}` : "No detectado";
 
-    if (!sueldo || !fondo) {
-      alert("⚠ No se encontraron datos válidos para procesar.");
+    if (!sueldo || !fondo || !periodo) {
+      alert("⚠ No se encontraron todos los datos necesarios en la papeleta.");
       return;
     }
 
@@ -72,23 +91,5 @@ procesarBtn.addEventListener("click", async () => {
   reader.readAsDataURL(archivo);
 });
 
-function guardarHistorial() {
-  const historial = JSON.parse(localStorage.getItem("historialFondo") || "[]");
-
-  // Validar duplicado por periodo
-  if (historial.find(e => e.periodo === datosActuales.periodo)) {
-    alert("Esta papeleta ya fue registrada.");
-    return;
-  }
-
-  const entrada = {
-    fecha: new Date().toLocaleDateString(),
-    sueldo: datosActuales.sueldo,
-    fondo: datosActuales.fondo,
-    periodo: datosActuales.periodo,
-    porcentaje: datosActuales.porcentaje
-  };
-
-  historial.push(entrada);
-  localStorage.setItem("historialFondo", JSON.stringify(historial));
-}
+barraPorcentaje.addEventListener("input", calcularSimulado);
+mesesSelect.addEventListener("change", calcularSimulado);
