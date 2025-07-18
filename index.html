@@ -1,135 +1,85 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fondo Ahorro CFE</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f3f3f3;
-      color: #333;
-      max-width: 900px;
-      margin: auto;
+      background: #f2f2f2;
+      margin: 0 auto;
+      padding: 20px;
+      max-width: 800px;
     }
-    h1 {
-      color: #004d40;
-    }
+    h1 { color: #00695c; }
     section {
       background: white;
       padding: 20px;
       border-radius: 10px;
-      margin-bottom: 20px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      margin-top: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input[type="file"], input[type="range"], select {
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    input, select {
+      padding: 10px;
       width: 100%;
       margin-top: 5px;
-      padding: 8px;
     }
-    .result {
-      margin-top: 15px;
-    }
-    .result span {
-      display: block;
-      margin: 4px 0;
+    #aporteSlider {
+      width: 100%;
     }
     button {
-      margin-top: 15px;
       padding: 10px 20px;
-      background-color: #00695c;
+      margin-top: 10px;
+      background: #004d40;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
     button:hover {
-      background-color: #004d40;
+      background: #00796b;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
-    .alerta {
-      color: red;
+    p span {
       font-weight: bold;
-      margin-top: 5px;
+      color: #2e7d32;
     }
+    .advertencia { color: red; font-weight: bold; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 </head>
 <body>
-  <h1>Fondo Ahorro CFE - App Web</h1>
+  <h1>Simulador Fondo de Ahorro - CFE</h1>
 
   <section>
-    <h2>1. Subir Papeleta de Nómina</h2>
+    <h2>1. Subir papeleta</h2>
     <input type="file" id="upload" accept="image/*" />
-    <button id="procesarBtn">Procesar</button>
-    <div class="result">
-      <span><strong>Sueldo base:</strong> $<span id="sueldoExtraido">0.00</span></span>
-      <span><strong>Fondo descontado:</strong> $<span id="fondoExtraido">0.00</span></span>
-      <span><strong>Periodo de pago:</strong> <span id="periodo">-</span></span>
-      <span><strong>% Calculado:</strong> <span id="porcentajeCalculado">0%</span></span>
-      <span class="alerta" id="advertencia"></span>
-    </div>
+    <button id="procesar">Procesar</button>
   </section>
 
   <section>
-    <h2>2. Simulador manual</h2>
-    <label for="aporteManual">Selecciona el porcentaje a ahorrar:</label>
-    <input type="range" id="aporteManual" min="0" max="18.2" step="0.1" value="9.1" />
-    <span><strong>Seleccionado:</strong> <span id="manualPorcentaje">9.1</span>%</span>
+    <h2>2. Datos extraídos</h2>
+    <p>💼 Sueldo: <span id="sueldoExtraido">-</span></p>
+    <p>💰 Fondo descontado: <span id="fondoExtraido">-</span></p>
+    <p>🗓️ Periodo: <span id="periodoExtraido">-</span></p>
+    <p>% Calculado: <span id="porcentajeReal">-</span> <span id="advertencia" class="advertencia"></span></p>
+  </section>
 
-    <label for="tiempo">Selecciona el tiempo de ahorro:</label>
-    <select id="tiempo">
+  <section>
+    <h2>3. Simulación de ahorro</h2>
+    <label>Selecciona porcentaje de aportación:</label>
+    <input type="range" min="0" max="18" step="0.1" value="9.1" id="aporteSlider" />
+    <label>Selecciona duración del ahorro (meses):</label>
+    <select id="tiempoAhorro">
       <option value="4">4 meses</option>
       <option value="8">8 meses</option>
       <option value="12" selected>12 meses</option>
     </select>
-
-    <div class="result">
-      <span><strong>Total simulado con CFE:</strong> <span id="simulado">$0.00</span></span>
-      <span id="comparacion"></span>
-    </div>
+    <p>📈 Aportación CFE: <span id="aportacionCFE">$0.00</span></p>
+    <p>📦 Total acumulado: <span id="totalFondo">$0.00</span></p>
   </section>
 
-  <section>
-    <h2>3. Guardar papeleta procesada</h2>
-    <button id="guardarBtn">Guardar en historial</button>
-  </section>
-
-  <section>
-    <h2>4. Historial de papeletas</h2>
-    <button id="toggleHistorial">Mostrar / Ocultar historial</button>
-    <div id="historial" style="display:none;">
-      <table>
-        <thead>
-          <tr>
-            <th>Periodo</th>
-            <th>Sueldo</th>
-            <th>Fondo</th>
-            <th>%</th>
-            <th>CFE</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody id="tablaHistorial"></tbody>
-      </table>
-      <p><strong>Acumulado total:</strong> <span id="acumulado">$0.00</span></p>
-    </div>
-  </section>
-
-  <script src="script.js"></script>
+  <script src="script.js" defer></script>
 </body>
 </html>
