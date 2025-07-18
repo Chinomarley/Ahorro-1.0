@@ -5,6 +5,10 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [history, setHistory] = useState([]);
+  const [simulacion, setSimulacion] = useState({
+    porcentajeAhorro: 9.10,
+    mesesAhorro: 12
+  });
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('fondoAhorroCFEHistory');
@@ -23,12 +27,16 @@ function App() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const base64Image = event.target.result;
-
         const extractedText = simulateOCRProcessing();
-
         const parsedData = parsePapeletaText(extractedText);
 
         if (parsedData && !isDuplicateEntry(parsedData.periodoPago, history)) {
+          // ⬇️ Actualiza el simulador con el porcentaje leído de la papeleta
+          setSimulacion(prev => ({
+            ...prev,
+            porcentajeAhorro: parseFloat(parsedData.porcentajeAportado)
+          }));
+
           setHistory(prev => [...prev, parsedData]);
           setUploadedFiles(prev => [...prev, {
             name: file.name,
@@ -100,11 +108,6 @@ function App() {
     });
   };
 
-  const [simulacion, setSimulacion] = useState({
-    porcentajeAhorro: 9.10,
-    mesesAhorro: 12
-  });
-
   const handleSimulacionChange = (e) => {
     const { name, value } = e.target;
     setSimulacion(prev => ({
@@ -167,7 +170,7 @@ function App() {
         React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
           uploadedFiles.map((file, index) =>
             React.createElement('div', { key: index, className: 'rounded-lg shadow-md bg-gray-100 dark:bg-gray-700' },
-              React.createElement('img', { src: file.preview, alt: file.name, className: 'w-full h-40 object-cover' }),
+              // Imagen eliminada intencionalmente
               React.createElement('div', { className: 'p-4' },
                 React.createElement('h3', { className: 'font-semibold' }, file.name),
                 React.createElement('p', null, 'Periodo: ', file.data?.periodoPago || 'No disponible'),
@@ -198,7 +201,7 @@ function App() {
                 React.createElement('td', null, entry.periodoPago),
                 React.createElement('td', null, '$', entry.fondoAhorro),
                 React.createElement('td', null, '$', entry.alcanceNeto),
-                React.createElement('td', null, entry.porcentajeAportado, '%'),
+                React.createElement('td', null, entry.porcentajeAportado + '%'),
                 React.createElement('td', null, '$', entry.aporteCFE),
                 React.createElement('td', null, '$', entry.totalAcumulado)
               )
@@ -221,6 +224,8 @@ function App() {
               value: simulacion.porcentajeAhorro,
               onChange: handleSimulacionChange
             }),
+            // Mostrar porcentaje dinámicamente
+            React.createElement('p', null, simulacion.porcentajeAhorro.toFixed(2) + '%'),
             React.createElement('select', {
               name: 'mesesAhorro',
               value: simulacion.mesesAhorro,
@@ -243,6 +248,5 @@ function App() {
   );
 }
 
-// Iniciar la aplicación
 const root = createRoot(document.getElementById('root'));
 root.render(React.createElement(App));
