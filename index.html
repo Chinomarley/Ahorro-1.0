@@ -1,18 +1,123 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Fondo Ahorro CFE</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="assets/icons/icon-192.png" />
-  <meta name="theme-color" content="#1e40af" />
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
-  <div id="root"></div>
-  <script src="script.js"></script>
+<body style="font-family:sans-serif;max-width:600px;margin:auto;padding:20px;">
+  <h1>📄 Fondo Ahorro CFE</h1>
+
+  <h2>1. Subir papeleta</h2>
+  <input type="file" id="upload" accept="image/*">
+  <button id="procesarBtn">Procesar</button>
+
+  <h2>2. Datos extraídos</h2>
+  <p><strong>Periodo:</strong> <span id="periodo">-</span></p>
+  <p><strong>Sueldo base:</strong> $<span id="sueldoExtraido">0.00</span></p>
+  <p><strong>Fondo ahorro descontado:</strong> $<span id="fondoExtraido">0.00</span></p>
+  <p><strong>Porcentaje aportado:</strong> <span id="porcentajeCalculado">0%</span> <span id="advertencia" style="color:red;"></span></p>
+  <button id="guardarBtn">Guardar en historial</button>
+
+  <h2>3. Historial</h2>
+  <table border="1" cellpadding="6" id="historial" style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr><th>Periodo</th><th>Sueldo</th><th>Fondo</th><th>%</th><th>CFE</th><th>Total</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>Total acumulado: <span id="acumulado">$0.00</span></h3>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <script>
+    const upload = document.getElementById("upload");
+    const procesarBtn = document.getElementById("procesarBtn");
+    const guardarBtn = document.getElementById("guardarBtn");
+    const sueldoSpan = document.getElementById("sueldoExtraido");
+    const fondoSpan = document.getElementById("fondoExtraido");
+    const porcentajeSpan = document.getElementById("porcentajeCalculado");
+    const advertenciaSpan = document.getElementById("advertencia");
+    const periodoSpan = document.getElementById("periodo");
+    let datosActuales = {};
+
+    procesarBtn.addEventListener("click", async () => {
+      const file = upload.files[0];
+      if (!file) return alert("Selecciona una imagen primero.");
+
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = async () => {
+        const result = await Tesseract.recognize(img, 'spa');
+        const text = result.data.text;
+
+        const sueldoMatch = text.match(/SUELDO\s*\$?([\d,]+\.\d{2})/i);
+        const fondoMatch = text.match(/FONDO.*?\$?([\d,]+\.\d{2})/i);
+        const periodoMatch = text.match(/PERIODO DE PAGO:\s*(\d{2}\/\d{2}\/\d{4})/i);
+
+        const sueldo = sueldoMatch ? parseFloat(sueldoMatch[1].replace(/[,]/g, '')) : 0;
+        const fondo = fondoMatch ? parseFloat(fondoMatch[1].replace(/[,]/g, '')) : 0;
+        const periodo = periodoMatch ? periodoMatch[1] : "Sin periodo";
+
+        sueldoSpan.textContent = sueldo.toFixed(2);
+        fondoSpan.textContent = fondo.toFixed(2);
+        periodoSpan.textContent = periodo;
+
+        const porcentaje = sueldo > 0 ? (fondo / sueldo * 100) : 0;
+        porcentajeSpan.textContent = porcentaje.toFixed(2) + "%";
+        advertenciaSpan.textContent = porcentaje > 9.1 ? "⚠ CFE solo duplica hasta el 9.10%" : "";
+
+        datosActuales = { sueldo, fondo, periodo, porcentaje };
+      };
+    });
+
+    guardarBtn.addEventListener("click", () => {
+      if (!datosActuales.periodo) return alert("Primero procesa una papeleta.");
+      let historial = JSON.parse(localStorage.getItem("historialFondo")) || [];
+
+      if (historial.some(e => e.periodo === datosActuales.periodo)) {
+        alert("Ya procesaste esta papeleta.");
+        return;
+      }
+
+      const cfe = Math.min(datosActuales.porcentaje, 9.1) / 100 * datosActuales.sueldo;
+      const total = datosActuales.fondo + cfe;
+
+      historial.push({
+        periodo: datosActuales.periodo,
+        sueldo: datosActuales.sueldo,
+        fondo: datosActuales.fondo,
+        porcentaje: datosActuales.porcentaje,
+        cfe,
+        total
+      });
+
+      localStorage.setItem("historialFondo", JSON.stringify(historial));
+      renderHistorial();
+    });
+
+    function renderHistorial() {
+      const tbody = document.querySelector("#historial tbody");
+      const historial = JSON.parse(localStorage.getItem("historialFondo")) || [];
+      let acumulado = 0;
+      tbody.innerHTML = "";
+      historial.forEach(h => {
+        acumulado += h.total;
+        tbody.innerHTML += `
+          <tr>
+            <td>${h.periodo}</td>
+            <td>$${h.sueldo.toFixed(2)}</td>
+            <td>$${h.fondo.toFixed(2)}</td>
+            <td>${h.porcentaje.toFixed(2)}%</td>
+            <td>$${h.cfe.toFixed(2)}</td>
+            <td>$${h.total.toFixed(2)}</td>
+          </tr>`;
+      });
+      document.getElementById("acumulado").textContent = "$" + acumulado.toFixed(2);
+    }
+
+    renderHistorial();
+  </script>
 </body>
 </html>
