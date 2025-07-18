@@ -1,19 +1,19 @@
-import React from 'https://unpkg.com/react @18/umd/react.development.js';
-import ReactDOM from 'https://unpkg.com/react-dom @18/umd/react-dom.development.js';
+const { useState, useEffect } = React;
+const { createRoot } = ReactDOM;
 
-const App = () => {
-  const [darkMode, setDarkMode] = React.useState(false);
-  const [uploadedFiles, setUploadedFiles] = React.useState([]);
-  const [history, setHistory] = React.useState([]);
+function App() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [history, setHistory] = useState([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const savedHistory = localStorage.getItem('fondoAhorroCFEHistory');
     if (savedHistory) {
       setHistory(JSON.parse(savedHistory));
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('fondoAhorroCFEHistory', JSON.stringify(history));
   }, [history]);
 
@@ -100,7 +100,7 @@ const App = () => {
     });
   };
 
-  const [simulacion, setSimulacion] = React.useState({
+  const [simulacion, setSimulacion] = useState({
     porcentajeAhorro: 9.10,
     mesesAhorro: 12
   });
@@ -140,109 +140,109 @@ const App = () => {
 
   const proyeccion = calcularProyeccion();
 
-  return (
-    React.createElement('div', { className: darkMode ? 'dark' : '' },
-      React.createElement('main', { className: 'container' },
-        React.createElement('h1', { className: 'text-3xl font-bold my-4' }, 'Fondo Ahorro CFE'),
-        React.createElement('p', { className: 'mb-4' }, 'Aplicación para cálculo y simulación de ahorro según contrato CFE.'),
+  return React.createElement('div', { className: darkMode ? 'dark' : '' },
+    React.createElement('main', { className: 'container' },
+      React.createElement('h1', { className: 'text-3xl font-bold my-4' }, 'Fondo Ahorro CFE'),
+      React.createElement('p', { className: 'mb-4' }, 'Aplicación para cálculo y simulación de ahorro según contrato CFE.'),
 
-        React.createElement('section', { className: 'card' },
-          React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Subir papeletas'),
-          React.createElement('div', { className: 'upload-area' + (darkMode ? ' dark' : '') },
+      React.createElement('section', { className: 'card' },
+        React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Subir papeletas'),
+        React.createElement('div', { className: 'upload-area' + (darkMode ? ' dark' : '') },
+          React.createElement('input', {
+            type: 'file',
+            multiple: true,
+            accept: 'image/*',
+            onChange: handleFileUpload,
+            className: 'hidden',
+            id: 'file-upload'
+          }),
+          React.createElement('label', { htmlFor: 'file-upload' },
+            React.createElement('span', null, 'Seleccionar archivos')
+          )
+        )
+      ),
+
+      uploadedFiles.length > 0 && React.createElement('section', { className: 'card' },
+        React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Archivos subidos'),
+        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
+          uploadedFiles.map((file, index) =>
+            React.createElement('div', { key: index, className: 'rounded-lg shadow-md bg-gray-100 dark:bg-gray-700' },
+              React.createElement('img', { src: file.preview, alt: file.name, className: 'w-full h-40 object-cover' }),
+              React.createElement('div', { className: 'p-4' },
+                React.createElement('h3', { className: 'font-semibold' }, file.name),
+                React.createElement('p', null, 'Periodo: ', file.data?.periodoPago || 'No disponible'),
+                React.createElement('p', null, 'Fondo Ahorro: $', file.data?.fondoAhorro || '0.00'),
+                file.data?.excedeLimite && React.createElement('p', { className: 'text-yellow-500 mt-1' }, '⚠️ Excede el límite del 9.10%')
+              )
+            )
+          )
+        )
+      ),
+
+      history.length > 0 && React.createElement('section', { className: 'card' },
+        React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Historial'),
+        React.createElement('table', { className: 'min-w-full divide-y divide-gray-200 dark:divide-gray-700' },
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              React.createElement('th', null, 'Periodo'),
+              React.createElement('th', null, 'Fondo Ahorro'),
+              React.createElement('th', null, 'Alcance Neto'),
+              React.createElement('th', null, '% Aportado'),
+              React.createElement('th', null, 'Aporte CFE'),
+              React.createElement('th', null, 'Total Acumulado')
+            )
+          ),
+          React.createElement('tbody', null,
+            history.map((entry, index) =>
+              React.createElement('tr', { key: index },
+                React.createElement('td', null, entry.periodoPago),
+                React.createElement('td', null, '$', entry.fondoAhorro),
+                React.createElement('td', null, '$', entry.alcanceNeto),
+                React.createElement('td', null, entry.porcentajeAportado, '%'),
+                React.createElement('td', null, '$', entry.aporteCFE),
+                React.createElement('td', null, '$', entry.totalAcumulado)
+              )
+            )
+          )
+        )
+      ),
+
+      React.createElement('section', { className: 'card' },
+        React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Simulador'),
+        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+          React.createElement('div', null,
+            React.createElement('label', null, 'Porcentaje de ahorro (%)'),
             React.createElement('input', {
-              type: 'file',
-              multiple: true,
-              accept: 'image/*',
-              onChange: handleFileUpload,
-              className: 'hidden',
-              id: 'file-upload'
+              type: 'range',
+              min: '0',
+              max: '18.2',
+              step: '0.1',
+              name: 'porcentajeAhorro',
+              value: simulacion.porcentajeAhorro,
+              onChange: handleSimulacionChange
             }),
-            React.createElement('label', { htmlFor: 'file-upload' },
-              React.createElement('span', null, 'Seleccionar archivos')
+            React.createElement('select', {
+              name: 'mesesAhorro',
+              value: simulacion.mesesAhorro,
+              onChange: handleSimulacionChange
+            },
+              React.createElement('option', { value: 4 }, '4 meses'),
+              React.createElement('option', { value: 8 }, '8 meses'),
+              React.createElement('option', { value: 12 }, '12 meses')
             )
-          )
-        ),
-
-        uploadedFiles.length > 0 && React.createElement('section', { className: 'card' },
-          React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Archivos subidos'),
-          React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
-            uploadedFiles.map((file, index) =>
-              React.createElement('div', { key: index, className: 'rounded-lg shadow-md bg-gray-100 dark:bg-gray-700' },
-                React.createElement('img', { src: file.preview, alt: file.name, className: 'w-full h-40 object-cover' }),
-                React.createElement('div', { className: 'p-4' },
-                  React.createElement('h3', { className: 'font-semibold' }, file.name),
-                  React.createElement('p', null, 'Periodo: ', file.data?.periodoPago || 'No disponible'),
-                  React.createElement('p', null, 'Fondo Ahorro: $', file.data?.fondoAhorro || '0.00'),
-                  file.data?.excedeLimite && React.createElement('p', { className: 'text-yellow-500 mt-1' }, '⚠️ Excede el límite del 9.10%')
-                )
-              )
-            )
-          )
-        ),
-
-        history.length > 0 && React.createElement('section', { className: 'card' },
-          React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Historial'),
-          React.createElement('table', { className: 'min-w-full divide-y divide-gray-200 dark:divide-gray-700' },
-            React.createElement('thead', null,
-              React.createElement('tr', null,
-                React.createElement('th', null, 'Periodo'),
-                React.createElement('th', null, 'Fondo Ahorro'),
-                React.createElement('th', null, 'Alcance Neto'),
-                React.createElement('th', null, '% Aportado'),
-                React.createElement('th', null, 'Aporte CFE'),
-                React.createElement('th', null, 'Total Acumulado')
-              )
-            ),
-            React.createElement('tbody', null,
-              history.map((entry, index) =>
-                React.createElement('tr', { key: index },
-                  React.createElement('td', null, entry.periodoPago),
-                  React.createElement('td', null, '$', entry.fondoAhorro),
-                  React.createElement('td', null, '$', entry.alcanceNeto),
-                  React.createElement('td', null, entry.porcentajeAportado, '%'),
-                  React.createElement('td', null, '$', entry.aporteCFE),
-                  React.createElement('td', null, '$', entry.totalAcumulado)
-                )
-              )
-            )
-          )
-        ),
-
-        React.createElement('section', { className: 'card' },
-          React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Simulador'),
-          React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
-            React.createElement('div', null,
-              React.createElement('label', null, 'Porcentaje de ahorro (%)'),
-              React.createElement('input', {
-                type: 'range',
-                min: '0',
-                max: '18.2',
-                step: '0.1',
-                name: 'porcentajeAhorro',
-                value: simulacion.porcentajeAhorro,
-                onChange: handleSimulacionChange
-              }),
-              React.createElement('select', {
-                name: 'mesesAhorro',
-                value: simulacion.mesesAhorro,
-                onChange: handleSimulacionChange
-              },
-                React.createElement('option', { value: 4 }, '4 meses'),
-                React.createElement('option', { value: 8 }, '8 meses'),
-                React.createElement('option', { value: 12 }, '12 meses')
-              )
-            ),
-            React.createElement('div', null,
-              React.createElement('p', null, 'Sueldo promedio: $', proyeccion.sueldoPromedio),
-              React.createElement('p', null, 'Ahorro mensual trabajador: $', proyeccion.montoMensualTrabajador),
-              React.createElement('p', null, 'Ahorro mensual CFE: $', proyeccion.montoMensualCFE),
-              React.createElement('p', null, 'Total proyectado: $', proyeccion.totalFondo)
-            )
+          ),
+          React.createElement('div', null,
+            React.createElement('p', null, 'Sueldo promedio: $', proyeccion.sueldoPromedio),
+            React.createElement('p', null, 'Ahorro mensual trabajador: $', proyeccion.montoMensualTrabajador),
+            React.createElement('p', null, 'Ahorro mensual CFE: $', proyeccion.montoMensualCFE),
+            React.createElement('p', null, 'Total proyectado: $', proyeccion.totalFondo)
           )
         )
       )
     )
   );
-};
+}
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+// Iniciar la aplicación
+const root = createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
