@@ -12,6 +12,7 @@ const tiempoSelect = document.getElementById("tiempo");
 const simuladoSpan = document.getElementById("simulado");
 const historialBtn = document.getElementById("toggleHistorial");
 const historialDiv = document.getElementById("historial");
+const comparacion = document.getElementById("comparacion");
 
 let datosActuales = {};
 
@@ -26,11 +27,9 @@ procesarBtn.addEventListener("click", async () => {
     });
 
     const text = result.data.text;
-
-    // Limpieza simple de texto
     const cleanText = text.replace(/\s+/g, ' ').toUpperCase();
 
-    // Buscar sueldo
+    // Buscar sueldo base
     const sueldoMatch = cleanText.match(/SUELDO[^0-9]*([\d,]+\.\d{2})/);
     const sueldo = sueldoMatch ? parseFloat(sueldoMatch[1].replace(',', '')) : 0;
 
@@ -40,11 +39,24 @@ procesarBtn.addEventListener("click", async () => {
 
     // Buscar periodo
     const periodoMatch = cleanText.match(/PERIODO[^A-Z0-9]*(\d{2}\/\d{2}\/\d{4})/);
-    const periodo = periodoMatch ? periodoMatch[1] : "Sin periodo";
+    const periodo = periodoMatch ? periodoMatch[1] : "";
+
+    // Validación: si no hay nada útil, mostrar error
+    if (!sueldo && !fondo && !periodo) {
+      alert("⚠ El archivo no contiene datos válidos para el cálculo del fondo de ahorro. Asegúrate de subir una papeleta de nómina.");
+      sueldoSpan.textContent = "0.00";
+      fondoSpan.textContent = "0.00";
+      porcentajeSpan.textContent = "0.00%";
+      periodoSpan.textContent = "No detectado";
+      advertenciaSpan.textContent = "";
+      comparacion.textContent = "";
+      datosActuales = {};
+      return;
+    }
 
     sueldoSpan.textContent = sueldo.toFixed(2);
     fondoSpan.textContent = fondo.toFixed(2);
-    periodoSpan.textContent = periodo;
+    periodoSpan.textContent = periodo || "No detectado";
 
     const porcentaje = sueldo > 0 ? (fondo / sueldo) * 100 : 0;
     porcentajeSpan.textContent = porcentaje.toFixed(2) + "%";
@@ -104,6 +116,18 @@ function actualizarSimulado() {
     const aportacion = datosActuales.sueldo * (porcentaje / 100) * meses;
     const cfe = Math.min(porcentaje, 9.1) / 100 * datosActuales.sueldo * meses;
     simuladoSpan.textContent = "$" + (aportacion + cfe).toFixed(2);
+
+    // Comparación con porcentaje real
+    if (datosActuales.porcentaje) {
+      const diferencia = porcentaje - datosActuales.porcentaje;
+      if (diferencia > 0.1) {
+        comparacion.textContent = `🔺 Estás aumentando tu aportación en +${diferencia.toFixed(2)}% respecto a la papeleta.`;
+      } else if (diferencia < -0.1) {
+        comparacion.textContent = `🔻 Estás reduciendo tu aportación en ${Math.abs(diferencia).toFixed(2)}%.`;
+      } else {
+        comparacion.textContent = `🔄 Mismo porcentaje que la papeleta.`;
+      }
+    }
   }
 }
 
