@@ -1,252 +1,116 @@
-const { useState, useEffect } = React;
-const { createRoot } = ReactDOM;
+const upload = document.getElementById("upload");
+const procesarBtn = document.getElementById("procesarBtn");
+const guardarBtn = document.getElementById("guardarBtn");
+const sueldoSpan = document.getElementById("sueldoExtraido");
+const fondoSpan = document.getElementById("fondoExtraido");
+const porcentajeSpan = document.getElementById("porcentajeCalculado");
+const advertenciaSpan = document.getElementById("advertencia");
+const periodoSpan = document.getElementById("periodo");
+const aporteSlider = document.getElementById("aporteManual");
+const porcentajeManualSpan = document.getElementById("manualPorcentaje");
+const tiempoSelect = document.getElementById("tiempo");
+const simuladoSpan = document.getElementById("simulado");
+const historialBtn = document.getElementById("toggleHistorial");
+const historialDiv = document.getElementById("historial");
 
-function App() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [simulacion, setSimulacion] = useState({
-    porcentajeAhorro: 9.10,
-    mesesAhorro: 12
+let datosActuales = {};
+
+procesarBtn.addEventListener("click", async () => {
+  const file = upload.files[0];
+  if (!file) return alert("Selecciona una imagen primero.");
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const result = await Tesseract.recognize(reader.result, 'spa', {
+      logger: m => console.log(m)
+    });
+
+    const text = result.data.text;
+
+    // Limpieza simple de texto
+    const cleanText = text.replace(/\s+/g, ' ').toUpperCase();
+
+    // Buscar sueldo
+    const sueldoMatch = cleanText.match(/SUELDO[^0-9]*([\d,]+\.\d{2})/);
+    const sueldo = sueldoMatch ? parseFloat(sueldoMatch[1].replace(',', '')) : 0;
+
+    // Buscar fondo de ahorro
+    const fondoMatch = cleanText.match(/FONDO[^0-9]*([\d,]+\.\d{2})/);
+    const fondo = fondoMatch ? parseFloat(fondoMatch[1].replace(',', '')) : 0;
+
+    // Buscar periodo
+    const periodoMatch = cleanText.match(/PERIODO[^A-Z0-9]*(\d{2}\/\d{2}\/\d{4})/);
+    const periodo = periodoMatch ? periodoMatch[1] : "Sin periodo";
+
+    sueldoSpan.textContent = sueldo.toFixed(2);
+    fondoSpan.textContent = fondo.toFixed(2);
+    periodoSpan.textContent = periodo;
+
+    const porcentaje = sueldo > 0 ? (fondo / sueldo) * 100 : 0;
+    porcentajeSpan.textContent = porcentaje.toFixed(2) + "%";
+    advertenciaSpan.textContent = porcentaje > 9.10
+      ? "⚠ CFE solo duplica hasta el 9.10%"
+      : "";
+
+    datosActuales = { sueldo, fondo, periodo, porcentaje };
+    actualizarSimulado();
+  };
+  reader.readAsDataURL(file);
+});
+
+guardarBtn.addEventListener("click", () => {
+  if (!datosActuales.periodo) return alert("Primero procesa una papeleta.");
+  let historial = JSON.parse(localStorage.getItem("historialFondo")) || [];
+
+  if (historial.some(e => e.periodo === datosActuales.periodo)) {
+    alert("Ya procesaste esta papeleta.");
+    return;
+  }
+
+  const cfe = Math.min(datosActuales.porcentaje, 9.1) / 100 * datosActuales.sueldo;
+  const total = datosActuales.fondo + cfe;
+
+  historial.push({ ...datosActuales, cfe, total });
+  localStorage.setItem("historialFondo", JSON.stringify(historial));
+  renderHistorial();
+});
+
+function renderHistorial() {
+  const tabla = document.getElementById("tablaHistorial");
+  tabla.innerHTML = "";
+  const historial = JSON.parse(localStorage.getItem("historialFondo")) || [];
+  let acumulado = 0;
+  historial.forEach(h => {
+    acumulado += h.total;
+    tabla.innerHTML += `
+      <tr>
+        <td>${h.periodo}</td>
+        <td>$${h.sueldo.toFixed(2)}</td>
+        <td>$${h.fondo.toFixed(2)}</td>
+        <td>${h.porcentaje.toFixed(2)}%</td>
+        <td>$${h.cfe.toFixed(2)}</td>
+        <td>$${h.total.toFixed(2)}</td>
+      </tr>`;
   });
-
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('fondoAhorroCFEHistory');
-    if (savedHistory) {
-      setHistory(JSON.parse(savedHistory));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('fondoAhorroCFEHistory', JSON.stringify(history));
-  }, [history]);
-
-  const handleFileUpload = (e) => {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64Image = event.target.result;
-        const extractedText = simulateOCRProcessing();
-        const parsedData = parsePapeletaText(extractedText);
-
-        if (parsedData && !isDuplicateEntry(parsedData.periodoPago, history)) {
-          // ⬇️ Actualiza el simulador con el porcentaje leído de la papeleta
-          setSimulacion(prev => ({
-            ...prev,
-            porcentajeAhorro: parseFloat(parsedData.porcentajeAportado)
-          }));
-
-          setHistory(prev => [...prev, parsedData]);
-          setUploadedFiles(prev => [...prev, {
-            name: file.name,
-            preview: base64Image,
-            data: parsedData
-          }]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const simulateOCRProcessing = () => {
-    return `
-      FONDO AHORRO    358.54
-      PERIODO DE PAGO 16/06/25 A 29/06/25
-      PERIODO DE ASISTENCIA 16/06/25 A 29/06/25
-      ALCANCE NETO 7875.00
-      SUELDO BASE 7000.00
-    `;
-  };
-
-  const parsePapeletaText = (text) => {
-    const fondoAhorroMatch = text.match(/FONDO AHORRO\s*([0-9,]+\.\d{2})/i);
-    const periodoPagoMatch = text.match(/PERIODO DE PAGO\s*(\d{2}\/\d{2}\/\d{2})\s*A\s*(\d{2}\/\d{2}\/\d{2})/i);
-    const alcanceNetoMatch = text.match(/ALCANCE NETO\s*([0-9,]+\.\d{2})/i);
-    const sueldoBaseMatch = text.match(/SUELDO BASE\s*([0-9,]+\.\d{2})/i);
-
-    if (!fondoAhorroMatch || !periodoPagoMatch || !alcanceNetoMatch || !sueldoBaseMatch) {
-      alert("Formato de papeleta no reconocido o incompleto.");
-      return null;
-    }
-
-    const fondoAhorro = parseFloat(fondoAhorroMatch[1].replace(',', ''));
-    const periodoPago = `${periodoPagoMatch[1]} a ${periodoPagoMatch[2]}`;
-    const alcanceNeto = parseFloat(alcanceNetoMatch[1].replace(',', ''));
-    const sueldoBase = parseFloat(sueldoBaseMatch[1].replace(',', ''));
-
-    const porcentajeAportado = (fondoAhorro / sueldoBase) * 100;
-    const limiteCFE = 9.10;
-    const excedeLimite = porcentajeAportado > limiteCFE;
-    const aporteCFE = Math.min(porcentajeAportado, limiteCFE) / 100 * sueldoBase;
-
-    return {
-      fondoAhorro,
-      periodoPago,
-      alcanceNeto,
-      sueldoBase,
-      porcentajeAportado: porcentajeAportado.toFixed(2),
-      aporteCFE: aporteCFE.toFixed(2),
-      totalAcumulado: (fondoAhorro + aporteCFE).toFixed(2),
-      excedeLimite
-    };
-  };
-
-  const isDuplicateEntry = (periodoPago, currentHistory) => {
-    return currentHistory.some(entry => entry.periodoPago === periodoPago);
-  };
-
-  const calculateTotals = () => {
-    return history.reduce((totals, entry) => ({
-      fondoAhorro: (parseFloat(totals.fondoAhorro) + parseFloat(entry.fondoAhorro)).toFixed(2),
-      aporteCFE: (parseFloat(totals.aporteCFE) + parseFloat(entry.aporteCFE)).toFixed(2),
-      totalAcumulado: (parseFloat(totals.totalAcumulado) + parseFloat(entry.totalAcumulado)).toFixed(2)
-    }), {
-      fondoAhorro: "0.00",
-      aporteCFE: "0.00",
-      totalAcumulado: "0.00"
-    });
-  };
-
-  const handleSimulacionChange = (e) => {
-    const { name, value } = e.target;
-    setSimulacion(prev => ({
-      ...prev,
-      [name]: parseFloat(value)
-    }));
-  };
-
-  const calcularProyeccion = () => {
-    const sueldoPromedio = history.length > 0 
-      ? history.reduce((sum, entry) => sum + parseFloat(entry.sueldoBase), 0) / history.length 
-      : 7000;
-
-    const porcentaje = Math.min(simulacion.porcentajeAhorro, 18.2);
-    const meses = simulacion.mesesAhorro;
-    
-    const montoMensualTrabajador = sueldoPromedio * (porcentaje / 100);
-    const montoMensualCFE = sueldoPromedio * (Math.min(porcentaje, 9.10) / 100);
-    
-    const totalTrabajador = montoMensualTrabajador * meses;
-    const totalCFE = montoMensualCFE * meses;
-    const totalFondo = totalTrabajador + totalCFE;
-
-    return {
-      sueldoPromedio: sueldoPromedio.toFixed(2),
-      montoMensualTrabajador: montoMensualTrabajador.toFixed(2),
-      montoMensualCFE: montoMensualCFE.toFixed(2),
-      totalTrabajador: totalTrabajador.toFixed(2),
-      totalCFE: totalCFE.toFixed(2),
-      totalFondo: totalFondo.toFixed(2)
-    };
-  };
-
-  const proyeccion = calcularProyeccion();
-
-  return React.createElement('div', { className: darkMode ? 'dark' : '' },
-    React.createElement('main', { className: 'container' },
-      React.createElement('h1', { className: 'text-3xl font-bold my-4' }, 'Fondo Ahorro CFE'),
-      React.createElement('p', { className: 'mb-4' }, 'Aplicación para cálculo y simulación de ahorro según contrato CFE.'),
-
-      React.createElement('section', { className: 'card' },
-        React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Subir papeletas'),
-        React.createElement('div', { className: 'upload-area' + (darkMode ? ' dark' : '') },
-          React.createElement('input', {
-            type: 'file',
-            multiple: true,
-            accept: 'image/*',
-            onChange: handleFileUpload,
-            className: 'hidden',
-            id: 'file-upload'
-          }),
-          React.createElement('label', { htmlFor: 'file-upload' },
-            React.createElement('span', null, 'Seleccionar archivos')
-          )
-        )
-      ),
-
-      uploadedFiles.length > 0 && React.createElement('section', { className: 'card' },
-        React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Archivos subidos'),
-        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
-          uploadedFiles.map((file, index) =>
-            React.createElement('div', { key: index, className: 'rounded-lg shadow-md bg-gray-100 dark:bg-gray-700' },
-              // Imagen eliminada intencionalmente
-              React.createElement('div', { className: 'p-4' },
-                React.createElement('h3', { className: 'font-semibold' }, file.name),
-                React.createElement('p', null, 'Periodo: ', file.data?.periodoPago || 'No disponible'),
-                React.createElement('p', null, 'Fondo Ahorro: $', file.data?.fondoAhorro || '0.00'),
-                file.data?.excedeLimite && React.createElement('p', { className: 'text-yellow-500 mt-1' }, '⚠️ Excede el límite del 9.10%')
-              )
-            )
-          )
-        )
-      ),
-
-      history.length > 0 && React.createElement('section', { className: 'card' },
-        React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Historial'),
-        React.createElement('table', { className: 'min-w-full divide-y divide-gray-200 dark:divide-gray-700' },
-          React.createElement('thead', null,
-            React.createElement('tr', null,
-              React.createElement('th', null, 'Periodo'),
-              React.createElement('th', null, 'Fondo Ahorro'),
-              React.createElement('th', null, 'Alcance Neto'),
-              React.createElement('th', null, '% Aportado'),
-              React.createElement('th', null, 'Aporte CFE'),
-              React.createElement('th', null, 'Total Acumulado')
-            )
-          ),
-          React.createElement('tbody', null,
-            history.map((entry, index) =>
-              React.createElement('tr', { key: index },
-                React.createElement('td', null, entry.periodoPago),
-                React.createElement('td', null, '$', entry.fondoAhorro),
-                React.createElement('td', null, '$', entry.alcanceNeto),
-                React.createElement('td', null, entry.porcentajeAportado + '%'),
-                React.createElement('td', null, '$', entry.aporteCFE),
-                React.createElement('td', null, '$', entry.totalAcumulado)
-              )
-            )
-          )
-        )
-      ),
-
-      React.createElement('section', { className: 'card' },
-        React.createElement('h2', { className: 'text-xl font-semibold mb-2' }, 'Simulador'),
-        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
-          React.createElement('div', null,
-            React.createElement('label', null, 'Porcentaje de ahorro (%)'),
-            React.createElement('input', {
-              type: 'range',
-              min: '0',
-              max: '18.2',
-              step: '0.1',
-              name: 'porcentajeAhorro',
-              value: simulacion.porcentajeAhorro,
-              onChange: handleSimulacionChange
-            }),
-            // Mostrar porcentaje dinámicamente
-            React.createElement('p', null, simulacion.porcentajeAhorro.toFixed(2) + '%'),
-            React.createElement('select', {
-              name: 'mesesAhorro',
-              value: simulacion.mesesAhorro,
-              onChange: handleSimulacionChange
-            },
-              React.createElement('option', { value: 4 }, '4 meses'),
-              React.createElement('option', { value: 8 }, '8 meses'),
-              React.createElement('option', { value: 12 }, '12 meses')
-            )
-          ),
-          React.createElement('div', null,
-            React.createElement('p', null, 'Sueldo promedio: $', proyeccion.sueldoPromedio),
-            React.createElement('p', null, 'Ahorro mensual trabajador: $', proyeccion.montoMensualTrabajador),
-            React.createElement('p', null, 'Ahorro mensual CFE: $', proyeccion.montoMensualCFE),
-            React.createElement('p', null, 'Total proyectado: $', proyeccion.totalFondo)
-          )
-        )
-      )
-    )
-  );
+  document.getElementById("acumulado").textContent = "$" + acumulado.toFixed(2);
 }
 
-const root = createRoot(document.getElementById('root'));
-root.render(React.createElement(App));
+function actualizarSimulado() {
+  const porcentaje = parseFloat(aporteSlider.value);
+  const meses = parseInt(tiempoSelect.value);
+  porcentajeManualSpan.textContent = porcentaje.toFixed(1);
+
+  if (datosActuales.sueldo) {
+    const aportacion = datosActuales.sueldo * (porcentaje / 100) * meses;
+    const cfe = Math.min(porcentaje, 9.1) / 100 * datosActuales.sueldo * meses;
+    simuladoSpan.textContent = "$" + (aportacion + cfe).toFixed(2);
+  }
+}
+
+aporteSlider.addEventListener("input", actualizarSimulado);
+tiempoSelect.addEventListener("change", actualizarSimulado);
+historialBtn.addEventListener("click", () => {
+  historialDiv.style.display = historialDiv.style.display === "none" ? "block" : "none";
+});
+
+renderHistorial();
