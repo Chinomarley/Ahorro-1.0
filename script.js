@@ -16,7 +16,21 @@ const comparacion = document.getElementById("comparacion");
 
 let datosActuales = {};
 
+// 🔁 Función para limpiar pantalla antes de nuevo análisis
+function resetCampos() {
+  sueldoSpan.textContent = "0.00";
+  fondoSpan.textContent = "0.00";
+  porcentajeSpan.textContent = "0.00%";
+  advertenciaSpan.textContent = "";
+  periodoSpan.textContent = "Procesando...";
+  comparacion.textContent = "";
+  datosActuales = {};
+  simuladoSpan.textContent = "$0.00";
+}
+
 procesarBtn.addEventListener("click", async () => {
+  resetCampos(); // 🧹 Limpiar datos anteriores
+
   const file = upload.files[0];
   if (!file) return alert("Selecciona una imagen primero.");
 
@@ -44,13 +58,6 @@ procesarBtn.addEventListener("click", async () => {
     // Validación: si no hay nada útil, mostrar error
     if (!sueldo && !fondo && !periodo) {
       alert("⚠ El archivo no contiene datos válidos para el cálculo del fondo de ahorro. Asegúrate de subir una papeleta de nómina.");
-      sueldoSpan.textContent = "0.00";
-      fondoSpan.textContent = "0.00";
-      porcentajeSpan.textContent = "0.00%";
-      periodoSpan.textContent = "No detectado";
-      advertenciaSpan.textContent = "";
-      comparacion.textContent = "";
-      datosActuales = {};
       return;
     }
 
