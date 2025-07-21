@@ -1,0 +1,1 @@
+// Lógica de la app principal y OCR irá aquí
