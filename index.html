@@ -1,1 +1,25 @@
-<!-- App principal, personalizada por usuario -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fondo Ahorro - Login</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="login-container">
+    <img src="assets/icons/icon-192.png" alt="Logo Fondo Ahorro" class="logo">
+    <h1>Fondo Ahorro CFE</h1>
+    <p class="credit">Desarrollado por Oscar López</p>
+    
+    <input type="text" id="username" placeholder="Usuario" />
+    <input type="password" id="password" placeholder="Contraseña" />
+    <button onclick="login()">Entrar</button>
+    
+    <p id="loginError" class="error"></p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
