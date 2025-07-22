@@ -1,20 +1,30 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Login - Fondo Ahorro CFE</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="usuarios.js"></script>
-  <script src="login.js" defer></script>
+  <title>Login - Fondo Ahorro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Fondo de Ahorro CFE</h1>
-  <div class="login-box">
-    <input type="text" id="usuario" placeholder="Usuario" />
-    <input type="password" id="password" placeholder="Contraseña" />
-    <button onclick="iniciarSesion()">Entrar</button>
-    <p id="error" class="error"></p>
+  <div class="login-container">
+    <h2>Iniciar sesión</h2>
+    <input id="usuario" type="text" placeholder="Usuario">
+    <input id="password" type="password" placeholder="Contraseña">
+    <button onclick="login()">Entrar</button>
   </div>
+  <script>
+    function login() {
+      const u = document.getElementById('usuario').value;
+      const p = document.getElementById('password').value;
+      const cuentas = { oscar: "admin123", demo: "demo123" };
+      if (cuentas[u] === p) {
+        localStorage.setItem("usuario", u);
+        window.location.href = "index.html";
+      } else {
+        alert("Credenciales incorrectas.");
+      }
+    }
+  </script>
 </body>
 </html>
