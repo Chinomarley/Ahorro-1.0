@@ -1,1 +1,20 @@
-{"name": "Fondo Ahorro", "short_name": "Ahorro", "start_url": "/", "display": "standalone"}
+{
+  "name": "Fondo Ahorro CFE",
+  "short_name": "Fondo CFE",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#e3f2fd",
+  "theme_color": "#004d40",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
