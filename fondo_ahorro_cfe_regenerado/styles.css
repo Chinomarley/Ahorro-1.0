@@ -1,5 +1,25 @@
-body { font-family: Arial; background:#eef2f3; padding:20px; max-width:600px; margin:auto; }
-h1,h2 { color:#004d40; }
-section { background:white; padding:15px; margin:15px 0; border-radius:8px; box-shadow:0 0 5px rgba(0,0,0,0.1); }
-input[type="file"],select,input[type="range"]{width:100%;margin:8px 0;padding:8px;}
-button{padding:10px 20px;background:#00796b;color:white;border:none;border-radius:5px;cursor:pointer;}
+body {
+  font-family: Arial, sans-serif;
+  max-width: 700px;
+  margin: auto;
+  padding: 20px;
+  background-color: #f3f4f6;
+}
+section {
+  background: white;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+button {
+  padding: 10px;
+  background-color: #00796b;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #004d40;
+}
