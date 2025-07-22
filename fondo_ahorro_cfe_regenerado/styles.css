@@ -1,42 +1,5 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #e3f2fd;
-  margin: 0;
-  padding: 0;
-}
 
-.login-container {
-  max-width: 400px;
-  margin: 80px auto;
-  padding: 20px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  text-align: center;
-}
-
-input {
-  width: 90%;
-  padding: 10px;
-  margin: 10px 0;
-  font-size: 1em;
-}
-
-button {
-  background-color: #00796b;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  font-size: 1em;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-button:hover {
-  background-color: #004d40;
-}
-
-.error-message {
-  color: red;
-  font-size: 0.9em;
-}
+body { font-family: Arial, sans-serif; background: #eef2f3; padding: 20px; max-width: 800px; margin: auto; }
+h1, h2 { color: #004d40; }
+section { background: white; padding: 20px; margin-top: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+input[type="file"], select, input[type="range"] { display: block; margin: 10px 0; width: 100%; padding: 8px; }

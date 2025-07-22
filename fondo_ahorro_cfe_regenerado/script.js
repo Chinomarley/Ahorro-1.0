@@ -1,147 +1,62 @@
-// --- LOGIN ---
-const usuarios = [
-  { usuario: "admin", password: "admin123", rol: "admin" },
-  { usuario: "juan", password: "clave123", rol: "user" },
-  { usuario: "lupita", password: "contraseña", rol: "user" }
-];
 
-function login() {
-  const u = document.getElementById("usuario").value.trim();
-  const p = document.getElementById("password").value.trim();
-  const encontrado = usuarios.find(uData => uData.usuario === u && uData.password === p);
+document.addEventListener("DOMContentLoaded", () => {
+  const usuario = localStorage.getItem("usuario");
+  if (!usuario) return window.location.href = "login.html";
+  document.getElementById("usuarioNombre").textContent = usuario;
 
-  if (encontrado) {
-    localStorage.setItem("usuarioActivo", u);
-    window.location.href = "app.html";
-  } else {
-    document.getElementById("login-error").textContent = "Credenciales inválidas.";
-  }
-}
-
-// --- APP ---
-if (window.location.pathname.includes("app.html")) {
-  document.addEventListener("DOMContentLoaded", () => {
-    if (!localStorage.getItem("usuarioActivo")) {
-      window.location.href = "index.html";
-    }
+  const aporteInput = document.getElementById("aporte");
+  const porcentajeManual = document.getElementById("porcentajeManual");
+  aporteInput.addEventListener("input", () => {
+    porcentajeManual.textContent = aporteInput.value + "%";
   });
-}
-
-let datosActuales = {};
+});
 
 function procesarImagen() {
-  const input = document.getElementById("papeleta");
-  const archivo = input.files[0];
-  const progreso = document.getElementById("progreso");
-  const mensaje = document.getElementById("mensajeError");
-  mensaje.textContent = "";
+  const file = document.getElementById("upload").files[0];
+  const progress = document.getElementById("progress");
+  const advertencia = document.getElementById("advertencia");
 
-  if (!archivo || !archivo.type.startsWith("image/")) {
-    mensaje.textContent = "Por favor, selecciona una imagen válida.";
+  if (!file || !file.type.startsWith("image/")) {
+    advertencia.textContent = "Por favor sube una imagen válida de tu papeleta.";
     return;
   }
 
-  const lector = new FileReader();
-  lector.onload = function () {
-    const imagen = new Image();
-    imagen.src = lector.result;
+  advertencia.textContent = "";
+  progress.style.display = "block";
 
-    imagen.onload = async () => {
-      progreso.style.display = "block";
-      const resultado = await Tesseract.recognize(imagen, 'spa', {
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            progreso.value = m.progress;
-          }
-        }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.src = reader.result;
+    img.onload = async () => {
+      const result = await Tesseract.recognize(img, 'spa', {
+        logger: m => { if (m.status === 'recognizing text') progress.value = m.progress; }
       });
-      progreso.style.display = "none";
+      progress.style.display = "none";
+      const text = result.data.text;
 
-      const texto = resultado.data.text;
+      const sueldoMatch = text.match(/salario\s*:?\s*\$?(\d+[.,]\d{2})/i);
+      const fondoMatch = text.match(/fondo de ahorro\s*:?\s*\$?(\d+[.,]\d{2})/i);
 
-      const fondoMatch = texto.match(/FONDO\s*DE\s*AHORRO\s*\$?\s*([\d,]+\.\d{2})/i);
-      const salarioMatch = texto.match(/SALARIO\s*BASE\s*\$?\s*([\d,]+\.\d{2})/i);
-      const periodoPagoMatch = texto.match(/PERIODO\s*PAGO\s*:? ([\d\-\/]+)/i);
-      const periodoAsistenciaMatch = texto.match(/PERIODO\s*ASISTENCIA\s*:? ([\d\-\/]+)/i);
+      let sueldo = 0, fondo = 0;
 
-      const fondo = fondoMatch ? parseFloat(fondoMatch[1].replace(/,/g, '')) : 0;
-      const salario = salarioMatch ? parseFloat(salarioMatch[1].replace(/,/g, '')) : 0;
-      const porcentaje = salario ? (fondo / salario * 100) : 0;
+      if (sueldoMatch) sueldo = parseFloat(sueldoMatch[1].replace(',',''));
+      if (fondoMatch) fondo = parseFloat(fondoMatch[1].replace(',',''));
 
-      datosActuales = {
-        fondo,
-        salario,
-        porcentaje,
-        periodoPago: periodoPagoMatch ? periodoPagoMatch[1] : '',
-        periodoAsistencia: periodoAsistenciaMatch ? periodoAsistenciaMatch[1] : '',
-        meses: parseInt(document.getElementById("meses").value)
-      };
+      document.getElementById("sueldoDetectado").textContent = "$" + sueldo.toFixed(2);
+      document.getElementById("fondoDetectado").textContent = "$" + fondo.toFixed(2);
 
-      document.getElementById("fondoDescontado").textContent = `$${fondo.toFixed(2)}`;
-      document.getElementById("salarioBase").textContent = `$${salario.toFixed(2)}`;
-      document.getElementById("porcentajeCalculado").textContent = `${porcentaje.toFixed(2)}%`;
+      if (sueldo > 0) {
+        const porcentaje = (fondo / sueldo) * 100;
+        document.getElementById("porcentajeCalculado").textContent = porcentaje.toFixed(2) + "%";
 
-      const advertencia = document.getElementById("advertencia");
-      if (porcentaje > 9.1) {
-        advertencia.textContent = "⚠️ CFE solo duplica hasta el 9.10%. El excedente no será duplicado.";
-      } else {
-        advertencia.textContent = "";
+        if (porcentaje > 9.10) {
+          document.getElementById("alerta").innerHTML = "⚠️ Estás aportando más del 9.10%. CFE no duplica el excedente.";
+        } else {
+          document.getElementById("alerta").innerHTML = "";
+        }
       }
     };
   };
-  lector.readAsDataURL(archivo);
-}
-
-function guardarHistorial() {
-  if (!datosActuales.fondo || !datosActuales.salario) {
-    alert("Primero debes procesar una papeleta válida.");
-    return;
-  }
-
-  const historial = JSON.parse(localStorage.getItem("historialPapeletas") || "[]");
-
-  const yaExiste = historial.some(p =>
-    p.periodoPago === datosActuales.periodoPago
-  );
-
-  if (yaExiste) {
-    alert("Ya procesaste esta papeleta.");
-    return;
-  }
-
-  historial.push({
-    ...datosActuales,
-    fecha: new Date().toLocaleDateString()
-  });
-
-  localStorage.setItem("historialPapeletas", JSON.stringify(historial));
-  alert("Papeleta guardada exitosamente.");
-}
-
-function mostrarHistorial() {
-  const historial = JSON.parse(localStorage.getItem("historialPapeletas") || "[]");
-  const contenedor = document.getElementById("historialContainer");
-
-  if (!historial.length) {
-    contenedor.innerHTML = "<p>No hay datos registrados.</p>";
-    return;
-  }
-
-  let tabla = `<table><thead>
-    <tr><th>Fecha</th><th>Salario</th><th>Fondo</th><th>%</th><th>Meses</th><th>Periodo Pago</th></tr>
-    </thead><tbody>`;
-
-  historial.forEach(d => {
-    tabla += `<tr>
-      <td>${d.fecha}</td>
-      <td>$${d.salario.toFixed(2)}</td>
-      <td>$${d.fondo.toFixed(2)}</td>
-      <td>${d.porcentaje.toFixed(2)}%</td>
-      <td>${d.meses}</td>
-      <td>${d.periodoPago}</td>
-    </tr>`;
-  });
-
-  tabla += "</tbody></table>";
-  contenedor.innerHTML = tabla;
+  reader.readAsDataURL(file);
 }
