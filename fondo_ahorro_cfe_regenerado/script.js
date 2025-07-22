@@ -1,59 +1,70 @@
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("procesarBtn");
-  btn.addEventListener("click", procesarImagen);
-});
-
-function procesarImagen() {
-  const file = document.getElementById("upload").files[0];
-  const progress = document.getElementById("progress");
-  const mensaje = document.getElementById("mensaje");
-
-  if (!file || !file.type.startsWith("image")) {
-    mensaje.textContent = "Por favor, sube una imagen válida.";
+  if (!btn) {
+    alert("❌ ERROR: No se encontró el botón 'Procesar'. Verifica el ID en el HTML.");
     return;
   }
 
-  mensaje.textContent = "";
-  progress.style.display = "block";
+  alert("✅ Botón 'Procesar' detectado correctamente");
+  btn.addEventListener("click", procesarImagen);
+});
+
+async function procesarImagen() {
+  alert("📎 Botón 'Procesar' fue presionado");
+
+  const fileInput = document.getElementById("upload");
+  const file = fileInput?.files[0];
+
+  if (!file) {
+    alert("❌ No se ha seleccionado ningún archivo.");
+    return;
+  }
+
+  if (!file.type.includes("image")) {
+    alert("⚠️ Solo se aceptan archivos de imagen (JPG o PNG).");
+    return;
+  }
+
+  alert("📁 Archivo detectado: " + file.name);
 
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     const img = new Image();
     img.src = reader.result;
+
     img.onload = async () => {
+      alert("🧠 Imagen cargada. Iniciando OCR...");
+
       const result = await Tesseract.recognize(img, 'spa', {
         logger: m => {
           if (m.status === 'recognizing text') {
-            progress.value = m.progress;
+            console.log(`OCR: ${Math.round(m.progress * 100)}%`);
           }
         }
       });
 
-      progress.style.display = "none";
-
       const text = result.data.text;
+      alert("✅ OCR terminado. Resultado parcial:\n\n" + text.slice(0, 300));
 
-      // Extraer salario
-      const sueldoMatch = text.match(/salario\s*:?[\s$]*([\d,]+\.\d{2})/i);
-      const fondoMatch = text.match(/fondo de ahorro\s*:?[\s$]*([\d,]+\.\d{2})/i);
+      // Intentar extraer datos
+      const sueldoMatch = text.match(/salario.*?\$?([\d,.]+)/i);
+      const fondoMatch = text.match(/fondo.*?\$?([\d,.]+)/i);
 
-      const sueldo = sueldoMatch ? parseFloat(sueldoMatch[1].replace(',', '')) : 0;
-      const fondo = fondoMatch ? parseFloat(fondoMatch[1].replace(',', '')) : 0;
+      const sueldo = sueldoMatch ? parseFloat(sueldoMatch[1].replace(",", "")) : 0;
+      const fondo = fondoMatch ? parseFloat(fondoMatch[1].replace(",", "")) : 0;
+      const porcentaje = sueldo ? (fondo / sueldo * 100).toFixed(2) : 0;
 
-      document.getElementById("sueldo").textContent = `$${sueldo.toFixed(2)}`;
-      document.getElementById("fondo").textContent = `$${fondo.toFixed(2)}`;
+      alert(`💡 Datos detectados:\nSueldo: $${sueldo}\nFondo: $${fondo}\n% Aportado: ${porcentaje}%`);
 
-      if (sueldo > 0 && fondo > 0) {
-        const porcentaje = ((fondo / sueldo) * 100).toFixed(2);
-        document.getElementById("porcentaje").textContent = `${porcentaje}%`;
+      document.getElementById("sueldo")?.textContent = `$${sueldo.toFixed(2)}`;
+      document.getElementById("fondo")?.textContent = `$${fondo.toFixed(2)}`;
+      document.getElementById("porcentaje")?.textContent = `${porcentaje}%`;
 
-        if (porcentaje > 9.1) {
-          mensaje.textContent = "⚠️ CFE no duplica más allá del 9.10%";
-        }
-      } else {
-        mensaje.textContent = "No se detectaron valores válidos en la imagen.";
+      if (porcentaje > 9.10) {
+        alert("⚠️ Recuerda: CFE solo duplica hasta el 9.10% del salario base.");
       }
     };
   };
+
   reader.readAsDataURL(file);
 }
