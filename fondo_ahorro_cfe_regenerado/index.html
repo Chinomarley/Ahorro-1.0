@@ -2,28 +2,25 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Fondo Ahorro CFE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fondo Ahorro CFE</title>
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-  <script defer src="script.js"></script>
 </head>
 <body>
-  <h1>Bienvenido a Fondo Ahorro</h1>
-
+  <h1>Fondo Ahorro CFE</h1>
   <section>
-    <h2>1. Subir Papeleta</h2>
-    <input type="file" id="upload" accept="image/*" />
+    <input type="file" id="upload" accept="image/*">
     <button id="procesarBtn">Procesar</button>
-    <progress id="progress" value="0" max="1" style="display: none; width: 100%;"></progress>
-    <p id="mensaje" style="color: red;"></p>
+    <progress id="progress" value="0" max="1" style="display:none;width:100%"></progress>
+    <p id="mensaje" style="color:red"></p>
+  </section>
+  <section>
+    <p>Sueldo: <span id="sueldo">$0.00</span></p>
+    <p>Fondo: <span id="fondo">$0.00</span></p>
+    <p>% estimado: <span id="porcentaje">0%</span></p>
   </section>
 
-  <section>
-    <h2>2. Resultado</h2>
-    <p>Sueldo detectado: <span id="sueldo">$0.00</span></p>
-    <p>Fondo descontado: <span id="fondo">$0.00</span></p>
-    <p>Porcentaje estimado: <span id="porcentaje">0%</span></p>
-  </section>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <script src="script.js" defer></script>
 </body>
 </html>
