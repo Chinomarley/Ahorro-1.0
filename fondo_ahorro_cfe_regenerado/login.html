@@ -2,29 +2,27 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Login Fondo Ahorro</title>
+  <title>Login - Fondo Ahorro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: Arial; padding: 20px; max-width: 400px; margin: auto; }
-    input { display: block; margin: 10px 0; padding: 10px; width: 100%; }
-    button { padding: 10px 20px; background: #004d40; color: white; border: none; cursor: pointer; }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h2>Iniciar sesión</h2>
-  <input type="text" id="usuario" placeholder="Usuario" />
-  <input type="password" id="password" placeholder="Contraseña" />
-  <button onclick="login()">Entrar</button>
+  <div class="login-container">
+    <h2>Iniciar sesión</h2>
+    <input id="usuario" type="text" placeholder="Usuario">
+    <input id="password" type="password" placeholder="Contraseña">
+    <button onclick="login()">Entrar</button>
+  </div>
   <script>
     function login() {
-      const user = document.getElementById('usuario').value;
-      const pass = document.getElementById('password').value;
+      const u = document.getElementById('usuario').value;
+      const p = document.getElementById('password').value;
       const cuentas = { oscar: "admin123", demo: "demo123" };
-      if (cuentas[user] === pass) {
-        localStorage.setItem("usuario", user);
+      if (cuentas[u] === p) {
+        localStorage.setItem("usuario", u);
         window.location.href = "index.html";
       } else {
-        alert("Usuario o contraseña incorrectos.");
+        alert("Credenciales incorrectas.");
       }
     }
   </script>
