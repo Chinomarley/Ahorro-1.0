@@ -2,25 +2,73 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fondo Ahorro CFE</title>
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #eef2f3;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h1, h2 {
+      color: #004d40;
+    }
+    section {
+      background: white;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    input[type="file"] {
+      margin-top: 10px;
+      display: block;
+      width: 100%;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #00695c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004d40;
+    }
+    .resultado span {
+      font-weight: bold;
+      color: #00695c;
+    }
+    .alerta {
+      color: #c62828;
+      font-weight: bold;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 </head>
 <body>
-  <h1>Fondo Ahorro CFE</h1>
+
+  <h1>Fondo de Ahorro CFE</h1>
+
   <section>
-    <input type="file" id="upload" accept="image/*">
+    <h2>1. Subir Papeleta</h2>
+    <input type="file" id="upload" accept="image/*" />
     <button id="procesarBtn">Procesar</button>
-    <progress id="progress" value="0" max="1" style="display:none;width:100%"></progress>
-    <p id="mensaje" style="color:red"></p>
-  </section>
-  <section>
-    <p>Sueldo: <span id="sueldo">$0.00</span></p>
-    <p>Fondo: <span id="fondo">$0.00</span></p>
-    <p>% estimado: <span id="porcentaje">0%</span></p>
   </section>
 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <section class="resultado">
+    <h2>2. Resultado</h2>
+    <p>💼 <strong>Sueldo base:</strong> <span id="sueldo">$0.00</span></p>
+    <p>🏦 <strong>Fondo descontado:</strong> <span id="fondo">$0.00</span></p>
+    <p>📊 <strong>% Aportado:</strong> <span id="porcentaje">0%</span></p>
+    <p id="alerta" class="alerta"></p>
+  </section>
+
   <script src="script.js" defer></script>
+
 </body>
 </html>
