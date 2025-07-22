@@ -1,42 +1,57 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const u = localStorage.getItem("usuario");
-  if (!u) return window.location.href = "login.html";
-  document.getElementById("usuarioNombre").textContent = u;
-  const input = document.getElementById("aporte");
-  const label = document.getElementById("porcentajeManual");
-  input.oninput = () => label.textContent = input.value + "%";
+  const btn = document.getElementById("procesarBtn");
+  btn.addEventListener("click", procesarImagen);
 });
 
 function procesarImagen() {
   const file = document.getElementById("upload").files[0];
-  const prog = document.getElementById("progress");
-  const alertEl = document.getElementById("alerta");
+  const progress = document.getElementById("progress");
+  const mensaje = document.getElementById("mensaje");
+
   if (!file || !file.type.startsWith("image")) {
-    alertEl.textContent = "Por favor sube una imagen.";
+    mensaje.textContent = "Por favor, sube una imagen válida.";
     return;
   }
-  alertEl.textContent = "";
-  prog.style.display = "block";
+
+  mensaje.textContent = "";
+  progress.style.display = "block";
+
   const reader = new FileReader();
   reader.onload = () => {
     const img = new Image();
     img.src = reader.result;
     img.onload = async () => {
-      const res = await Tesseract.recognize(img, 'spa', {
-        logger: m => { if (m.status === 'recognizing text') prog.value = m.progress; }
+      const result = await Tesseract.recognize(img, 'spa', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            progress.value = m.progress;
+          }
+        }
       });
-      prog.style.display = "none";
-      const text = res.data.text;
-      const sal = (text.match(/salario\\s*:?\\s*\\$?([\\d,]+\\.\\d{2})/i)||["","0"])[1];
-      const fond = (text.match(/fondo de ahorro\\s*:?\\s*\\$?([\\d,]+\\.\\d{2})/i)||["","0"])[1];
-      const s = parseFloat(sal.replace(',','')), f = parseFloat(fond.replace(',',''));
-      document.getElementById("sueldoDetectado").textContent = "$"+s.toFixed(2);
-      document.getElementById("fondoDetectado").textContent = "$"+f.toFixed(2);
-      if (s > 0) {
-        const pct = (f/s*100).toFixed(2);
-        document.getElementById("porcentajeCalculado").textContent = pct+"%";
-        if (pct > 9.1) alertEl.textContent = "⚠️ Estás pasando del 9.10%. CFE no duplica el exceso.";
-        else alertEl.textContent = "";
+
+      progress.style.display = "none";
+
+      const text = result.data.text;
+
+      // Extraer salario
+      const sueldoMatch = text.match(/salario\s*:?[\s$]*([\d,]+\.\d{2})/i);
+      const fondoMatch = text.match(/fondo de ahorro\s*:?[\s$]*([\d,]+\.\d{2})/i);
+
+      const sueldo = sueldoMatch ? parseFloat(sueldoMatch[1].replace(',', '')) : 0;
+      const fondo = fondoMatch ? parseFloat(fondoMatch[1].replace(',', '')) : 0;
+
+      document.getElementById("sueldo").textContent = `$${sueldo.toFixed(2)}`;
+      document.getElementById("fondo").textContent = `$${fondo.toFixed(2)}`;
+
+      if (sueldo > 0 && fondo > 0) {
+        const porcentaje = ((fondo / sueldo) * 100).toFixed(2);
+        document.getElementById("porcentaje").textContent = `${porcentaje}%`;
+
+        if (porcentaje > 9.1) {
+          mensaje.textContent = "⚠️ CFE no duplica más allá del 9.10%";
+        }
+      } else {
+        mensaje.textContent = "No se detectaron valores válidos en la imagen.";
       }
     };
   };
