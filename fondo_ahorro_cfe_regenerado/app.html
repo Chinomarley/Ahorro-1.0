@@ -1,1 +1,48 @@
-<!DOCTYPE html><html><head><meta charset='UTF-8'><title>App</title></head><body><h1>Bienvenido a la App</h1></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fondo Ahorro - App</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <h1>Bienvenido</h1>
+
+    <section>
+      <h2>Subir papeleta</h2>
+      <input type="file" id="papeleta" accept="image/*" />
+      <button onclick="procesarImagen()">Procesar</button>
+      <progress id="progreso" value="0" max="1" style="width: 100%; display:none;"></progress>
+      <p id="mensajeError" class="error-message"></p>
+    </section>
+
+    <section>
+      <h2>Resultado del cálculo</h2>
+      <p>Fondo descontado: <span id="fondoDescontado">$0.00</span></p>
+      <p>Salario base: <span id="salarioBase">$0.00</span></p>
+      <p>Porcentaje aportado: <span id="porcentajeCalculado">0%</span></p>
+      <p id="advertencia" class="warning-message"></p>
+
+      <label for="meses">Duración de ahorro:</label>
+      <select id="meses">
+        <option value="4">4 meses</option>
+        <option value="8">8 meses</option>
+        <option value="12" selected>12 meses</option>
+      </select>
+
+      <button onclick="guardarHistorial()">Guardar papeleta</button>
+    </section>
+
+    <section>
+      <h2>Historial</h2>
+      <button onclick="mostrarHistorial()">Ver historial</button>
+      <div id="historialContainer"></div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
